@@ -24,14 +24,14 @@ class Gisp:
     # sid > interval > item ascendingly. A sequence for example
     # [(0, a), (86400m abc), (259200, ac)] would be represented as follow:
     #
-    #   sid     interval     item
+    #   sid     item    interval
     # 
-    #   0       0            a
-    #   0       86400        a
-    #   0       86400        b
-    #   0       86400        c
-    #   0       259200       a
-    #   0       259200       c
+    #   0       a       0
+    #   0       a       86400
+    #   0       b       86400
+    #   0       c       86400
+    #   0       a       259200
+    #   0       c       259200
     #
     # PDB is an extention of ISDB with 2 mote columns 'pid' is the ID of the 
     # postfix and 'whole_interval' is the interval from the head item. The a- 
@@ -49,7 +49,16 @@ class Gisp:
     @staticmethod
     def transform(sequences: List[Tuple[int, List[str]]]) -> DataFrame:
         """Transform sequences into DataFrame (ISDB) for mining."""
-        pass
+        
+        def yield_item_rows() -> Tuple[int, str, int]:
+            for sid, sequence in enumerate(sequences):
+                for interval, items in sequence:
+                    for item in items:
+                        yield sid, item, interval
+
+        isdb = DataFrame(yield_item_rows(), columns=['sid', 'item', 'interval'])
+        isdb.sort_values(by=['sid', 'interval', 'item'], inplace=True)
+        return isdb
 
     def mine(self, isdb: DataFrame) -> List[Pattern]:
         """Driver function to run the algorithm on the given database."""
