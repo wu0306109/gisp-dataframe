@@ -90,7 +90,10 @@ class Gisp:
         for item, count in counts.items():
             patterns.append(Pattern([(0, item)], count))
 
-            child_pdb = concat(yield_sub_pdbs(item))
+            child_pdb = concat(yield_sub_pdbs(item), ignore_index=True)
+            # need to ensure columns order when unpacking in interrows()
+            child_pdb = child_pdb[
+                ['sid', 'pid', 'item', 'interval', 'whole_interval']]
             subpatterns = self.mine_subpatterns(child_pdb)
 
             for pattern in subpatterns:
@@ -137,7 +140,8 @@ class Gisp:
                 sequence=[(itemized_interval, item)],
                 support=count))
 
-            child_pdb = concat(yield_sub_pdbs(itemized_interval, item))
+            child_pdb = concat(
+                yield_sub_pdbs(itemized_interval, item), ignore_index=True)
             subpatterns = self.mine_subpatterns(child_pdb)
 
             for pattern in subpatterns:
