@@ -79,17 +79,16 @@ class Gisp:
                 sub_pdb['pid'] = pid
                 yield sub_pdb
 
-        constraints = (
-            (isdb['interval'] >= self._min_whole_interval)
-            & (isdb['interval'] <= self._max_whole_interval))
-        counts = isdb[constraints].drop_duplicates(
+        counts = isdb.drop_duplicates(
             subset=['sid', 'item']).value_counts(subset='item')
         counts = counts[counts >= self._min_support]
 
         patterns = []
-        for item, count in counts.items():
-            patterns.append(Pattern([(0, item)], count))
+        if self._min_whole_interval == 0:
+            for item, count in counts.items():
+                patterns.append(Pattern([(0, item)], count))
 
+        for item, count in counts.items():
             child_pdb = concat(yield_sub_pdbs(item), ignore_index=True)
             # need to ensure columns order when unpacking in interrows()
             child_pdb = child_pdb[
@@ -124,10 +123,14 @@ class Gisp:
 
         pdb['itemized_interval'] = pdb['interval'].apply(self._itemize)
 
+        # constraints = (
+        #     (pdb['interval'] >= self._min_interval)
+        #     & (pdb['interval'] <= self._max_interval)
+        #     & (pdb['whole_interval'] >= self._min_whole_interval)
+        #     & (pdb['whole_interval'] <= self._max_whole_interval))
         constraints = (
             (pdb['interval'] >= self._min_interval)
             & (pdb['interval'] <= self._max_interval)
-            & (pdb['whole_interval'] >= self._min_whole_interval)
             & (pdb['whole_interval'] <= self._max_whole_interval))
         counts = pdb[constraints].drop_duplicates(
             subset=['sid', 'item', 'itemized_interval']).value_counts(
@@ -136,10 +139,6 @@ class Gisp:
 
         patterns = []
         for (item, itemized_interval), count in counts.items():
-            patterns.append(Pattern(
-                sequence=[(itemized_interval, item)],
-                support=count))
-
             child_pdb = concat(
                 yield_sub_pdbs(itemized_interval, item), ignore_index=True)
             subpatterns = self.mine_subpatterns(child_pdb)
@@ -147,6 +146,16 @@ class Gisp:
             for pattern in subpatterns:
                 pattern.sequence.insert(0, (itemized_interval, item))
             patterns.extend(subpatterns)
+
+        constraints &= pdb['whole_interval'] >= self._min_whole_interval
+        counts = pdb[constraints].drop_duplicates(
+            subset=['sid', 'item', 'itemized_interval']).value_counts(
+                subset=['item', 'itemized_interval'])
+        counts = counts[counts >= self._min_support]
+        for (item, itemized_interval), count in counts.items():
+            patterns.append(Pattern(
+                sequence=[(itemized_interval, item)],
+                support=count))
         return patterns
 
 
