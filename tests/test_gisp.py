@@ -268,3 +268,107 @@ class TestGisp:
             Pattern([(2, 'b'), (3, 'c')], 2),
             Pattern([(0, 'd'), (3, 'c')], 2),
         ])
+
+    def test_mine_with_constrainsts(self) -> None:
+        isdb = DataFrame(
+            [
+                (0, 'a', 0),
+                (0, 'a', 2),
+                (0, 'c', 2),
+                (0, 'a', 7),
+                (0, 'b', 7),
+                (0, 'c', 20),
+                (0, 'f', 20),
+                (1, 'a', 0),
+                (1, 'd', 0),
+                (1, 'c', 14),
+                (1, 'c', 26),
+                (2, 'a', 0),
+                (2, 'e', 0),
+                (2, 'f', 0),
+                (2, 'a', 6),
+                (2, 'b', 6),
+                (2, 'd', 6),
+                (2, 'b', 19),
+                (2, 'c', 19),
+            ],
+            columns=['sid', 'item', 'interval'],
+        )
+        gisp = Gisp(
+            itemize=lambda t: int(log2(t+1)), min_support=2, min_interval=6,
+            max_interval=inf, min_whole_interval=0, max_whole_interval=inf)
+        patterns = gisp.mine(isdb)
+        assert sorted(patterns) == sorted([
+            Pattern([(0, 'a')], 3),
+            Pattern([(0, 'b')], 2),
+            Pattern([(0, 'c')], 3),
+            Pattern([(0, 'd')], 2),
+            Pattern([(0, 'f')], 2),
+            Pattern([(0, 'a'), (3, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'c')], 3),
+            Pattern([(0, 'a'), (4, 'c')], 3),
+            Pattern([(0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'd'), (3, 'c')], 2),
+        ])
+
+        gisp = Gisp(
+            itemize=lambda t: int(log2(t+1)), min_support=2, min_interval=0,
+            max_interval=13, min_whole_interval=0, max_whole_interval=inf)
+        patterns = gisp.mine(isdb)
+        assert sorted(patterns) == sorted([
+            Pattern([(0, 'a')], 3),
+            Pattern([(0, 'b')], 2),
+            Pattern([(0, 'c')], 3),
+            Pattern([(0, 'd')], 2),
+            Pattern([(0, 'f')], 2),
+            Pattern([(0, 'a'), (0, 'b')], 2),
+            Pattern([(0, 'a'), (0, 'd')], 2),
+            Pattern([(0, 'a'), (2, 'a')], 2),
+            Pattern([(0, 'a'), (2, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (0, 'b')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'b'), (3, 'c')], 2),
+        ])
+
+        gisp = Gisp(
+            itemize=lambda t: int(log2(t+1)), min_support=2, min_interval=0,
+            max_interval=inf, min_whole_interval=6, max_whole_interval=inf)
+        patterns = gisp.mine(isdb)
+        assert sorted(patterns) == sorted([
+            Pattern([(0, 'a'), (3, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'c')], 3),
+            Pattern([(0, 'a'), (4, 'c')], 3),
+            Pattern([(0, 'a'), (0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (0, 'd'), (3, 'c')], 2),
+            Pattern([(0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'd'), (3, 'c')], 2),
+        ])
+
+        gisp = Gisp(
+            itemize=lambda t: int(log2(t+1)), min_support=2, min_interval=0,
+            max_interval=inf, min_whole_interval=0, max_whole_interval=13)
+        patterns = gisp.mine(isdb)
+        assert sorted(patterns) == sorted([
+            Pattern([(0, 'a')], 3),
+            Pattern([(0, 'b')], 2),
+            Pattern([(0, 'c')], 3),
+            Pattern([(0, 'd')], 2),
+            Pattern([(0, 'f')], 2),
+            Pattern([(0, 'a'), (0, 'b')], 2),
+            Pattern([(0, 'a'), (0, 'd')], 2),
+            Pattern([(0, 'a'), (2, 'a')], 2),
+            Pattern([(0, 'a'), (2, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'b')], 2),
+            Pattern([(0, 'a'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (0, 'b'), (3, 'c')], 2),
+            Pattern([(0, 'a'), (2, 'a'), (0, 'b')], 2),
+            Pattern([(0, 'b'), (3, 'c')], 2),
+        ])
