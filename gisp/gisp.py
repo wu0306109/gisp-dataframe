@@ -68,7 +68,35 @@ class Gisp:
 
     def mine(self, isdb: DataFrame) -> List[Pattern]:
         """Driver function to run the algorithm on the given database."""
-        pass
+
+        def yield_sub_pdbs(item: str) -> DataFrame:
+            """Yield sub-PDBs of postfix projected by item."""
+            matches = isdb[isdb['item'] == item]
+            for pid, (i, (sid, _, interval)) in enumerate(matches.iterrows()):
+                sub_pdb = isdb[isdb['sid'] == sid].loc[i + 1:]
+                sub_pdb['interval'] -= interval
+                sub_pdb['whole_interval'] = sub_pdb['interval']
+                sub_pdb['pid'] = pid
+                yield sub_pdb
+
+        constraints = (
+            (isdb['interval'] >= self._min_whole_interval)
+            & (isdb['interval'] <= self._max_whole_interval))
+        counts = isdb[constraints].drop_duplicates(
+            subset=['sid', 'item']).value_counts(subset='item')
+        counts = counts[counts >= self._min_support]
+
+        patterns = []
+        for item, count in counts.items():
+            patterns.append(Pattern([(0, item)], count))
+
+            child_pdb = concat(yield_sub_pdbs(item))
+            subpatterns = self.mine_subpatterns(child_pdb)
+
+            for pattern in subpatterns:
+                pattern.sequence.insert(0, (0, item))
+            patterns.extend(subpatterns)
+        return patterns
 
     def mine_subpatterns(self, pdb: DataFrame) -> List[Pattern]:
         """Perform level 2 or later projection to mine subpatterns recursively.

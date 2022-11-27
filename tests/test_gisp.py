@@ -36,6 +36,38 @@ class TestGisp:
         )
         assert_frame_equal(isdb, right, check_dtype=False)
 
+    def test_mine(self) -> None:
+        isdb = DataFrame(
+            [
+                (0, 'a', 0),
+                (0, 'a', 86400),
+                (0, 'b', 86400),
+                (0, 'c', 86400),
+                (0, 'a', 259200),
+                (0, 'c', 259200),
+                (1, 'a', 0),
+                (1, 'd', 0),
+                (1, 'c', 259200),
+                (2, 'a', 0),
+                (2, 'e', 0),
+                (2, 'f', 0),
+                (2, 'a', 172800),
+                (2, 'b', 172800),
+            ],
+            columns=['sid', 'item', 'interval'],
+        )
+        gisp = Gisp(
+            itemize=lambda t: t//86400, min_support=2, min_interval=0,
+            max_interval=172900, min_whole_interval=0, max_whole_interval=inf)
+        patterns = gisp.mine(isdb)
+        assert sorted(patterns) == sorted([
+            Pattern([(0, 'a')], 3),
+            Pattern([(0, 'a'), (0, 'b')], 2),
+            Pattern([(0, 'a'), (2, 'a')], 2),
+            Pattern([(0, 'b')], 2),
+            Pattern([(0, 'c')], 2),
+        ])
+
     def test_mine_subpatterns(self) -> None:
         pdb = DataFrame(
             [
